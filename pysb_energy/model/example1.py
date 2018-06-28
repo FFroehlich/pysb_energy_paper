@@ -1,48 +1,83 @@
+import sympy as sp
+
 from pysb import (
     Model, Monomer, Parameter, Rule, EnergyPattern, Initial, Expression
 )
 
+#convers reaction kinetics (kon, koff) into the corresponding free energy (Gf)
+#Formula: Gf/RT= -ln(koff/kon) 
+def getGfRT(kon, koff):
+    GfRT =-sp.ln(koff/kon);
+    return GfRT
+
+#converts reaction kinetics (kon, koff and phi) into the corresponding baseline activation energy (Ea0) 
+#Formula: Ea0/RT= - RT * ln(kon) - phi * Gf
+#Alternative formula: Ea0/RT= - RT * ln(kon) - phi * Gf
+def getEa0RT(kon, koff, phi):
+    Ea0RT = - (phi * sp.ln(koff) + (1-phi) * sp.ln(kon));
+    return Ea0RT
+
+#converts thermodynamic factors into corresponding free energy modifier
+#Formula: Gf/RT= -ln(tf)
+def getTGfRT(tf):
+    tGfRT = - sp.ln(tf);
+    return tGfRT
+
 Model()
 
 #fundamental constants
-RT = 2.577 #temperature and gas constant product, kJ/mol
+#RT = 2.577 #temperature and gas constant product, kJ/mol
 #NA=  6.022140857e23 #Avogadro's number ,/mol
 #V=  1**-12 #volume of cytoplasm, L
-
-#Initial concentrations, mol/L
-Parameter('A_0', 0.1) 
-Parameter('R_0', 0.01) 
-Parameter('I_0', 0) 
-#Standard free energy of pattern formation, kJ/mol
-Parameter('G_RA', 1 / RT) #koff= 10 s, kon= 10 /s/uM ->
-Parameter('G_RR', 1 / RT) #koff= 1 s, kon= 10 /s/uM -> 
-Parameter('G_RI', 1 / RT) #koff= 10 s, kon= 10 /s/uM -> 
-Parameter('h_G', 0 / RT)
-Parameter('f_G', 0 / RT)
-Parameter('g_G', 0 / RT)
-#Baseline activation energy, kJ/mol
-Parameter('E0_RA', 1 / RT) #koff= 10 uM, kon= 10 /s/uM
-Parameter('E0_RR', 1 / RT)
-Parameter('E0_RI', 1 / RT)
-#Rate distribution parameter, no units
-Parameter('phi', 0.5) 
 
 #Monomer definition
 Monomer('A', ['r']) #Ras-GTP
 Monomer('R', ['a', 'r', 'i']) #RAF
 Monomer('I', ['r']) #RAF inhibitor
 
+#Kinetic parameters, koff /s/M, kon /s
+Parameter('koff_RA', 10) 
+Parameter('kon_RA', 10**-6) 
+Parameter('koff_RR', 1) 
+Parameter('kon_RR', 10**-6) 
+Parameter('koff_RI', 10**-1) 
+Parameter('kon_RI', 10**-7)
+#Thermodynamic factors, no units
+Parameter('h', 1)
+Parameter('f', 1)
+Parameter('g', 1)
+#Rate distribution parameter, no units
+Parameter('phi', 0.5) 
+
+#Standard free energy of formation, kJ/mol. 
+Expression('Gf_RA', getGfRT(kon_RA,koff_RA))
+Expression('Gf_RR', getGfRT(kon_RR,koff_RR)) 
+Expression('Gf_RI', getGfRT(kon_RI,koff_RI)) 
+Expression('h_Gf', getTGfRT(h)) 
+Expression('f_Gf', getTGfRT(f))
+Expression('g_Gf', getTGfRT(g))
+#Baseline activation energy, kJ/mol. 
+Expression('Ea0_RA', getEa0RT(kon_RA, koff_RA, phi)) 
+Expression('Ea0_RR', getEa0RT(kon_RR, koff_RR, phi))
+Expression('Ea0_RI', getEa0RT(kon_RI, koff_RI, phi))
+
 #Ras-GTP and RAF binding
-EnergyPattern('ep_RA', R(a=1) % A(r=1), G_RA)
-EnergyPattern('ep_ARRA', A(r=1) % R(a=1, r=2) % R(r=2, a=3) % A(r=3), h_G)
-Rule('RA_binding', R(a=None) + A(r=None) | A(r=1) % R(a=1), phi, E0_RA, energy=True)
+EnergyPattern('ep_RA', R(a=1) % A(r=1), Gf_RA)
+EnergyPattern('ep_ARRA', A(r=1) % R(a=1, r=2) % R(r=2, a=3) % A(r=3), h_Gf)
+Rule('RA_binding', R(a=None) + A(r=None) | A(r=1) % R(a=1), phi, Ea0_RA, energy=True)
 #RAF dimerization
-EnergyPattern('ep_RR', R(r=1) % R(r=1), G_RR)
-Rule('RR_binding', R(r=None) + R(r=None) | R(r=1) % R(r=1), phi, E0_RR, energy=True)
+EnergyPattern('ep_RR', R(r=1) % R(r=1), Gf_RR)
+Rule('RR_binding', R(r=None) + R(r=None) | R(r=1) % R(r=1), phi, Ea0_RR, energy=True)
 #RAF and RAFi binding
-EnergyPattern('ep_RRI',R(r=1) % R(r=1, i=2) % I(r=2), f_G)
-EnergyPattern('ep_IRRI',I(r=3) % R(r=1, i=3) % R(r=1, i=2) % I(r=2), Expression('fg_G', f_G + g_G))
-Rule('RAF_binds_RAFi', R(i=None) + I(r=None) | R(i=1) % I(r=1), phi, E0_RI, energy=True)
+EnergyPattern('ep_RI', R(i=1) % I(r=1), Gf_RI)
+EnergyPattern('ep_RRI',R(r=1, i=None) % R(r=1, i=2) % I(r=2), f_Gf)
+EnergyPattern('ep_IRRI',I(r=3) % R(r=1, i=3) % R(r=1, i=2) % I(r=2), Expression('fg_G', f_Gf + g_Gf))
+Rule('RAF_binds_RAFi', R(i=None) + I(r=None) | R(i=1) % I(r=1), phi, Ea0_RI, energy=True)
+
+#Initial concentrations, mol/L
+Parameter('A_0', 0.1) 
+Parameter('R_0', 0.01) 
+Parameter('I_0', 0) 
 
 #Set initial concentrations
 Initial(A(r=None), A_0) 
