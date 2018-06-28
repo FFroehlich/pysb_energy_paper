@@ -6,22 +6,22 @@ Model()
 
 #fundamental constants
 RT = 2.577 #temperature and gas constant product, kJ/mol
-NA=  6.022140857e23 #Avogadro's number ,/mol
-V=  1**-12 #volume of cytoplasm, L
+#NA=  6.022140857e23 #Avogadro's number ,/mol
+#V=  1**-12 #volume of cytoplasm, L
 
-#Molecule abundances
-Parameter('A_0', 1) #Ras-GTP
-Parameter('R_0', 1) #RAF
-Parameter('I_0', 1) #RAF inhibitor
+#Initial concentrations, mol/L
+Parameter('A_0', 0.1) 
+Parameter('R_0', 0.01) 
+Parameter('I_0', 0) 
 #Standard free energy of pattern formation, kJ/mol
-Parameter('G_RA', 1 / RT)
-Parameter('G_RR', 1 / RT)
-Parameter('G_RI', 1 / RT)
-Parameter('h_G', 1 / RT)
-Parameter('f_G', 1 / RT)
-Parameter('g_G', 1 / RT)
+Parameter('G_RA', 1 / RT) #koff= 10 s, kon= 10 /s/uM ->
+Parameter('G_RR', 1 / RT) #koff= 1 s, kon= 10 /s/uM -> 
+Parameter('G_RI', 1 / RT) #koff= 10 s, kon= 10 /s/uM -> 
+Parameter('h_G', 0 / RT)
+Parameter('f_G', 0 / RT)
+Parameter('g_G', 0 / RT)
 #Baseline activation energy, kJ/mol
-Parameter('E0_RA', 1 / RT)
+Parameter('E0_RA', 1 / RT) #koff= 10 uM, kon= 10 /s/uM
 Parameter('E0_RR', 1 / RT)
 Parameter('E0_RI', 1 / RT)
 #Rate distribution parameter, no units
@@ -41,13 +41,13 @@ EnergyPattern('ep_RR', R(r=1) % R(r=1), G_RR)
 Rule('RR_binding', R(r=None) + R(r=None) | R(r=1) % R(r=1), phi, E0_RR, energy=True)
 #RAF and RAFi binding
 EnergyPattern('ep_RRI',R(r=1) % R(r=1, i=2) % I(r=2), f_G)
-EnergyPattern('ep_IRRI',I(r=3) % R(r=1, i=3) % R(r=1, i=2) % I(r=2), Expression('fg_G', f_G * g_G))
+EnergyPattern('ep_IRRI',I(r=3) % R(r=1, i=3) % R(r=1, i=2) % I(r=2), Expression('fg_G', f_G + g_G))
 Rule('RAF_binds_RAFi', R(i=None) + I(r=None) | R(i=1) % I(r=1), phi, E0_RI, energy=True)
 
-#Initial concentrations, #mol/L
-Initial(A(r=None), A_0/NA/V) 
-Initial(R(a=None, r=None, i=None), R_0/NA/V) 
-Initial(I(r=None), I_0/NA/V)
+#Set initial concentrations
+Initial(A(r=None), A_0) 
+Initial(R(a=None, r=None, i=None), R_0) 
+Initial(I(r=None), I_0)
 
 
 
