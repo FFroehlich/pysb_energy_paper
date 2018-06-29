@@ -1,7 +1,7 @@
 import sympy as sp
 
 from pysb import (
-    Model, Monomer, Parameter, Rule, EnergyPattern, Initial, Expression
+    Model, Monomer, Parameter, Rule, EnergyPattern, Initial, Expression, Observable
 )
 
 #convers reaction kinetics (kon, koff) into the corresponding free energy (Gf)
@@ -84,12 +84,13 @@ Initial(A(r=None), A_0)
 Initial(R(a=None, r=None, i=None), R_0) 
 Initial(I(r=None), I_0)
 
-
-
-
-
-
-
+#Observables
+#not inhibited RAF monomer
+Observable('RAF_monomer_not_I_bound_obs', R(r=None, i=None))    
+#not inhibited RAF promoter in dimer
+Observable('RAF_dimer_not_I_bound_obs', R(r=1, i=None) % R(r=1))   
+#not inhibited RAF monomers and promoter in dimer
+Observable('RAF_monomer_and_dimer_not_I_bound_obs', R(r=None, i=None) + R(r=1, i=None) % R(r=1))  
 
 
 
