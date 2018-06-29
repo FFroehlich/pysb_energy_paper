@@ -1,5 +1,8 @@
 import re
+import itertools
+from collections import OrderedDict
 import matplotlib.pyplot as plt
+import pandas as pd
 import pysb.bng
 from pysb.pattern import match_complex_pattern
 from ..model.example1 import model
@@ -19,13 +22,24 @@ energy_exprs = [
     for s in model.species
 ]
 
-subs = {p: p.value for p in model.parameters}
-subs.update({e: e.expand_expr() for e in model.expressions_constant()})
-energies = [e.evalf(subs=subs) for e in energy_exprs]
+param_sets = list(itertools.product([0.01, 1], [1.0, 100]))
+rows = []
+for f, g in param_sets:
+    model.parameters.f.value = f
+    model.parameters.g.value = g
+    subs = {p: p.value for p in model.parameters}
+    subs.update({e: e.expand_expr() for e in model.expressions_constant()})
+    energies = [float(e.evalf(subs=subs)) for e in energy_exprs]
+    row = OrderedDict([('f', f), ('g', g)])
+    row.update(zip(names, energies))
+    rows.append(row)
+df = pd.DataFrame(rows).set_index(['f', 'g'])
 
 ax = plt.gca()
-ax.bar(range(len(energies)), energies, tick_label=names)
+df.T.plot.bar(ax=ax)
 ax.set_ylabel(u'\u0394G (kJ/mol)')
+ax.set_xlabel('species')
 plt.setp(ax.get_xticklabels(), rotation=45, rotation_mode='anchor', ha='right')
 plt.tight_layout()
+
 plt.show()
