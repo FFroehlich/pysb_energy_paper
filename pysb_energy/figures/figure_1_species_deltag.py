@@ -13,7 +13,7 @@ names = [
 
 energy_exprs = [
     sum(
-        match_complex_pattern(ep.pattern, s) * ep.energy
+        match_complex_pattern(ep.pattern, s, count=True) * ep.energy
         for ep in model.energypatterns
     )
     for s in model.species
@@ -25,6 +25,7 @@ energies = [e.evalf(subs=subs) for e in energy_exprs]
 
 ax = plt.gca()
 ax.bar(range(len(energies)), energies, tick_label=names)
-ax.set_ylabel('\u0394G (kJ/mol)')
+ax.set_ylabel(u'\u0394G (kJ/mol)')
 plt.setp(ax.get_xticklabels(), rotation=45, rotation_mode='anchor', ha='right')
 plt.tight_layout()
+plt.show()
