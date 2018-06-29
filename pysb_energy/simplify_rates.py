@@ -169,8 +169,8 @@ def table_to_printstream(species, table, fmt='rst'):
 
     if fmt == 'latex':
         return "\n".join(["\documentclass{article}",
-                             "\usepackage[utf8]{inputenc}",
-                             "\usepackage{amsmath}",
+                             r"\usepackage[utf8]{inputenc}",
+                             r"\usepackage{amsmath}",
                              "\\begin{document}",
                             "\def\\arraystretch{2}",
                             model_name,
