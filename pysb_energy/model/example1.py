@@ -7,7 +7,7 @@ from pysb import (
 #convers reaction kinetics (kon, koff) into the corresponding free energy (Gf)
 #Formula: Gf/RT= -ln(koff/kon) 
 def getGfRT(kon, koff):
-    GfRT =-sp.ln(koff/kon);
+    GfRT =-(sp.ln(koff)-sp.ln(kon));
     return GfRT
 
 #converts reaction kinetics (kon, koff and phi) into the corresponding baseline activation energy (Ea0) 
