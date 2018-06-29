@@ -22,7 +22,13 @@ energy_exprs = [
     for s in model.species
 ]
 
-param_sets = list(itertools.product([0.01, 1], [1.0, 100]))
+# f, g pairs
+param_sets = [
+    [1, 1],
+    [0.01, 100],
+    [1, 100],
+    [0.01, 1],
+]
 rows = []
 for f, g in param_sets:
     model.parameters.f.value = f
@@ -30,7 +36,7 @@ for f, g in param_sets:
     subs = {p: p.value for p in model.parameters}
     subs.update({e: e.expand_expr() for e in model.expressions_constant()})
     energies = [float(e.evalf(subs=subs)) for e in energy_exprs]
-    row = OrderedDict([('f', f), ('g', g)])
+    row = OrderedDict([('f', str(f)), ('g', str(g))])
     row.update(zip(names, energies))
     rows.append(row)
 df = pd.DataFrame(rows).set_index(['f', 'g'])
